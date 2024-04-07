@@ -39,6 +39,7 @@ namespace WinForms
         {
             listView.Items.Clear();
             imageList = new ImageList();
+            imageList.ColorDepth = ColorDepth.Depth32Bit;
             listView.SmallImageList = imageList;
             listView.View = View.SmallIcon;
 
@@ -47,13 +48,13 @@ namespace WinForms
                 Icon icon = SystemIcons.WinLogo;
                 ListViewItem item = new ListViewItem(fileInfo.Name, 1);
 
-                if (!imageList.Images.ContainsKey(fileInfo.Extension))
+                if (!imageList.Images.ContainsKey(fileInfo.Name))
                 {
                     icon = Icon.ExtractAssociatedIcon(fileInfo.FullName);
-                    imageList.Images.Add(fileInfo.Extension, icon);
+                    imageList.Images.Add(fileInfo.Name, icon);
                 }
 
-                item.ImageKey = fileInfo.Extension;
+                item.ImageKey = fileInfo.Name;
                 listView.Items.Add(item);
             }
         }
@@ -66,23 +67,44 @@ namespace WinForms
             InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
         }
 
+        private void ColorExistingImitator(ListViewItem imitatorItem, ListViewItem originalItem)
+        {
+            string originalData = File.ReadAllText(Path.Combine(OriginalFolder.FullName, originalItem.Text));
+            string imitatorData = File.ReadAllText(Path.Combine(ImitatorFolder.FullName, imitatorItem.Text));
+            if (originalData == imitatorData)
+            {
+                imitatorItem.ForeColor = Color.Black;
+            }
+            else
+            {
+                imitatorItem.ForeColor = Color.Orange;
+            }
+        }
+
         private void chooseImitatorFolderButton_Click(object sender, EventArgs e)
         {
             ImitatorFolder = SelectFolderFromDialog();
             imitatorTextBox.Text = ImitatorFolder.FullName;
 
             InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
-            
-            foreach(ListViewItem originalItem in originalListView.Items)
+            // Красим все элементы, поскольку по умолчанию они новые для оригинала
+            foreach (ListViewItem item in imitatorListView.Items)
             {
-                if (imitatorListView.Items.ContainsKey(originalItem.Text))
+                item.ForeColor = Color.Green;
+            }
+
+            foreach (ListViewItem originalItem in originalListView.Items)
+            {
+                ListViewItem imitatorItem = imitatorListView.Items.Cast<ListViewItem>()
+                                          .FirstOrDefault(x => x.Text == originalItem.Text);
+
+                if (imitatorItem != null)
                 {
-                    ListViewItem imitatorItem = imitatorListView.Items.Find(originalItem.Text, true)[0];
-                    imitatorItem.ForeColor = Color.Green;
+                    ColorExistingImitator(imitatorItem, originalItem);
                 }
                 else
                 {
-                    _imageImitatorList.Images.Add(originalItem.ImageList.Images[0]);
+                    _imageImitatorList.Images.Add(originalItem.Text, originalItem.ImageList.Images[0]);
                     ListViewItem copyOfOriginal = (ListViewItem) originalItem.Clone();
                     copyOfOriginal.ForeColor = Color.Red;
                     imitatorListView.Items.Add(copyOfOriginal);

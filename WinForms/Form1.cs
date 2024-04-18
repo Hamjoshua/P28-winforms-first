@@ -67,6 +67,32 @@ namespace WinForms
             InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
         }
 
+        void PaintFoldersInImitatorPanel()
+        {
+            foreach (ListViewItem item in imitatorListView.Items)
+            {
+                item.ForeColor = Color.Green;
+            }
+
+            foreach (ListViewItem originalItem in originalListView.Items)
+            {
+                ListViewItem imitatorItem = imitatorListView.Items.Cast<ListViewItem>()
+                                          .FirstOrDefault(x => x.Text == originalItem.Text);
+
+                if (imitatorItem != null)
+                {
+                    ColorExistingImitator(imitatorItem, originalItem);
+                }
+                else
+                {
+                    _imageImitatorList.Images.Add(originalItem.Text, originalItem.ImageList.Images[0]);
+                    ListViewItem copyOfOriginal = (ListViewItem)originalItem.Clone();
+                    copyOfOriginal.ForeColor = Color.Red;
+                    imitatorListView.Items.Add(copyOfOriginal);
+                }
+            }
+        }
+
         private void ColorExistingImitator(ListViewItem imitatorItem, ListViewItem originalItem)
         {
             string originalData = File.ReadAllText(Path.Combine(OriginalFolder.FullName, originalItem.Text));
@@ -88,28 +114,61 @@ namespace WinForms
 
             InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
             // Красим все элементы, поскольку по умолчанию они новые для оригинала
-            foreach (ListViewItem item in imitatorListView.Items)
+            PaintFoldersInImitatorPanel();
+        }
+
+        private void CopyFileToDirectory(FileInfo fileToCopy, DirectoryInfo destinationFolder, FileInfo[] filesOfDestinationFolder)
+        {
+            int counterOfDuplicate = filesOfDestinationFolder.Count(d => d.Name == fileToCopy.Name);
+            if (counterOfDuplicate >= 1)
             {
-                item.ForeColor = Color.Green;
+                var partsOfName = fileToCopy.Name.Split('.');
+                string newFileName = $"{partsOfName[0]} ({counterOfDuplicate}).{partsOfName[1]}";
+                string newFilePath = Path.Combine(destinationFolder.FullName, newFileName);
+                fileToCopy.CopyTo(newFilePath);
+            }
+            else
+            {
+                string newFilePath = Path.Combine(destinationFolder.FullName, fileToCopy.Name);
+                fileToCopy.CopyTo(newFilePath);
+            }
+        }
+
+        private void syncTwoFouldersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (OriginalFolder == null || ImitatorFolder == null)
+            {
+                MessageBox.Show("Не выбраны папки");
+                return;
             }
 
-            foreach (ListViewItem originalItem in originalListView.Items)
-            {
-                ListViewItem imitatorItem = imitatorListView.Items.Cast<ListViewItem>()
-                                          .FirstOrDefault(x => x.Text == originalItem.Text);
+            var originalFiles = OriginalFolder.GetFiles();
+            var imitatorFiles = ImitatorFolder.GetFiles();
 
-                if (imitatorItem != null)
+            int maxEnd = originalFiles.Length > imitatorFiles.Length ? originalFiles.Length : imitatorFiles.Length;
+            int counter = 0;
+
+            while (counter < maxEnd)
+            {
+                if(counter < originalFiles.Length)
                 {
-                    ColorExistingImitator(imitatorItem, originalItem);
+                    FileInfo originalFile = originalFiles[counter];
+                    CopyFileToDirectory(originalFile, ImitatorFolder, imitatorFiles);
                 }
-                else
+
+                if (counter < originalFiles.Length)
                 {
-                    _imageImitatorList.Images.Add(originalItem.Text, originalItem.ImageList.Images[0]);
-                    ListViewItem copyOfOriginal = (ListViewItem) originalItem.Clone();
-                    copyOfOriginal.ForeColor = Color.Red;
-                    imitatorListView.Items.Add(copyOfOriginal);
-                }
+                    FileInfo imitatorFile = imitatorFiles[counter];
+                    CopyFileToDirectory(imitatorFile, OriginalFolder, originalFiles);
+                }             
+
+                ++counter;
             }
+
+            MessageBox.Show("Синхронизация завершена!");
+
+            InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
+            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
         }
     }
 }

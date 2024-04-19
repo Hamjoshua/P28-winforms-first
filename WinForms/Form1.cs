@@ -13,8 +13,9 @@ namespace WinForms
 {
     public partial class Form1 : Form
     {
-        public DirectoryInfo OriginalFolder;
-        public DirectoryInfo ImitatorFolder;
+        public SyncDirectory OriginalFolder;
+        public SyncDirectory ImitatorFolder;
+
         ImageList _imageOriginalList;
         ImageList _imageImitatorList;
 
@@ -23,19 +24,20 @@ namespace WinForms
             InitializeComponent();
         }
 
-        private DirectoryInfo SelectFolderFromDialog()
+        private string SelectFolderFromDialog()
         {
-            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();            
+            folderBrowserDialog.SelectedPath = Directory.GetCurrentDirectory();
             DialogResult result = folderBrowserDialog.ShowDialog();
             if (result == DialogResult.OK)
             {
-                return new DirectoryInfo(folderBrowserDialog.SelectedPath);
+                return folderBrowserDialog.SelectedPath;
             }
 
             return null;
         }
 
-        private void InitListViews(DirectoryInfo directoryInfo, ref ListView listView, ref ImageList imageList)
+        private void InitListViews(SyncDirectory directory, ref ListView listView, ref ImageList imageList)
         {
             listView.Items.Clear();
             imageList = new ImageList();
@@ -43,97 +45,93 @@ namespace WinForms
             listView.SmallImageList = imageList;
             listView.View = View.SmallIcon;
 
-            foreach (FileInfo fileInfo in directoryInfo.GetFiles())
+            foreach (FileInfo fileInfo in directory.OldFiles)
             {
-                Icon icon = SystemIcons.WinLogo;
-                ListViewItem item = new ListViewItem(fileInfo.Name, 1);
-
-                if (!imageList.Images.ContainsKey(fileInfo.Name))
-                {
-                    icon = Icon.ExtractAssociatedIcon(fileInfo.FullName);
-                    imageList.Images.Add(fileInfo.Name, icon);
-                }
-
-                item.ImageKey = fileInfo.Name;
-                listView.Items.Add(item);
+                AddItem(fileInfo, ref listView, ref imageList);
             }
+        }
+
+        private void AddItem(FileInfo fileInfo, ref ListView listView, ref ImageList imageList)
+        {
+            Icon icon = SystemIcons.WinLogo;
+            ListViewItem item = new ListViewItem(fileInfo.Name, 1);
+
+            if (!imageList.Images.ContainsKey(fileInfo.Name))
+            {
+                icon = Icon.ExtractAssociatedIcon(fileInfo.FullName);
+                imageList.Images.Add(fileInfo.Name, icon);
+            }
+
+            item.ImageKey = fileInfo.Name;
+            listView.Items.Add(item);
         }
 
         private void chooseOriginalFolderButton_Click(object sender, EventArgs e)
         {
-            OriginalFolder = SelectFolderFromDialog();
-            originalTextBox.Text = OriginalFolder.FullName;
+            string path = SelectFolderFromDialog();
+            if (string.IsNullOrEmpty(path))
+            {
+                MessageBox.Show("Выбор папки прерван", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            OriginalFolder = new SyncDirectory(path);
+            originalTextBox.Text = OriginalFolder.Directory.FullName;
 
             InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
         }
 
-        void PaintFoldersInImitatorPanel()
+        private void chooseImitatorFolderButton_Click(object sender, EventArgs e)
         {
-            foreach (ListViewItem item in imitatorListView.Items)
+            string path = SelectFolderFromDialog();
+            if (string.IsNullOrEmpty(path))
             {
-                item.ForeColor = Color.Green;
+                MessageBox.Show("Выбор папки прерван", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
+            ImitatorFolder = new SyncDirectory(path);
+            imitatorTextBox.Text = ImitatorFolder.Directory.FullName;
 
-            foreach (ListViewItem originalItem in originalListView.Items)
+            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
+        }
+
+        void ColorApplied(ref ListView listView)
+        {
+            foreach(ListViewItem appliedItem in listView.Items)
             {
-                ListViewItem imitatorItem = imitatorListView.Items.Cast<ListViewItem>()
-                                          .FirstOrDefault(x => x.Text == originalItem.Text);
+                appliedItem.ForeColor = Color.Black;
+            }
+        }
 
-                if (imitatorItem != null)
+        void ColorChanges(SyncDirectory directory, ref ListView listView, ref ImageList imageList)
+        {
+            List<FileInfo> newFilesClone = directory.NewFiles.ToList();
+
+            foreach (ListViewItem originalItem in listView.Items)
+            {
+                int indexOfExisingFile = newFilesClone.FindIndex(f => f.Name == originalItem.Text);                
+
+                if (directory.ChangedFiles.Contains(originalItem.Text) && indexOfExisingFile > -1)
                 {
-                    ColorExistingImitator(imitatorItem, originalItem);
+                    originalItem.ForeColor = Color.Orange;
+                    newFilesClone.Remove(newFilesClone[indexOfExisingFile]);
+                }
+                else if (indexOfExisingFile == -1)
+                {
+                    originalItem.ForeColor = Color.Red;
                 }
                 else
                 {
-                    _imageImitatorList.Images.Add(originalItem.Text, originalItem.ImageList.Images[0]);
-                    ListViewItem copyOfOriginal = (ListViewItem)originalItem.Clone();
-                    copyOfOriginal.ForeColor = Color.Red;
-                    imitatorListView.Items.Add(copyOfOriginal);
+                    newFilesClone.Remove(newFilesClone[indexOfExisingFile]);
                 }
             }
-        }
 
-        private void ColorExistingImitator(ListViewItem imitatorItem, ListViewItem originalItem)
-        {
-            string originalData = File.ReadAllText(Path.Combine(OriginalFolder.FullName, originalItem.Text));
-            string imitatorData = File.ReadAllText(Path.Combine(ImitatorFolder.FullName, imitatorItem.Text));
-            if (originalData == imitatorData)
+            foreach(FileInfo fileInfo in newFilesClone)
             {
-                imitatorItem.ForeColor = Color.Black;
-            }
-            else
-            {
-                imitatorItem.ForeColor = Color.Orange;
+                AddItem(fileInfo, ref listView, ref imageList);
+                listView.Items[listView.Items.Count - 1].ForeColor = Color.Green;
             }
         }
-
-        private void chooseImitatorFolderButton_Click(object sender, EventArgs e)
-        {
-            ImitatorFolder = SelectFolderFromDialog();
-            imitatorTextBox.Text = ImitatorFolder.FullName;
-
-            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
-            // Красим все элементы, поскольку по умолчанию они новые для оригинала
-            PaintFoldersInImitatorPanel();
-        }
-
-        private void CopyFileToDirectory(FileInfo fileToCopy, DirectoryInfo destinationFolder, FileInfo[] filesOfDestinationFolder)
-        {
-            int counterOfDuplicate = filesOfDestinationFolder.Count(d => d.Name == fileToCopy.Name);
-            if (counterOfDuplicate >= 1)
-            {
-                var partsOfName = fileToCopy.Name.Split('.');
-                string newFileName = $"{partsOfName[0]} ({counterOfDuplicate}).{partsOfName[1]}";
-                string newFilePath = Path.Combine(destinationFolder.FullName, newFileName);
-                fileToCopy.CopyTo(newFilePath);
-            }
-            else
-            {
-                string newFilePath = Path.Combine(destinationFolder.FullName, fileToCopy.Name);
-                fileToCopy.CopyTo(newFilePath);
-            }
-        }
-
+        
         private void syncTwoFouldersToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (OriginalFolder == null || ImitatorFolder == null)
@@ -142,33 +140,52 @@ namespace WinForms
                 return;
             }
 
-            var originalFiles = OriginalFolder.GetFiles();
-            var imitatorFiles = ImitatorFolder.GetFiles();
+            OriginalFolder.SyncWith(ImitatorFolder, false, false);
+            ColorChanges(OriginalFolder, ref originalListView, ref _imageOriginalList);
 
-            int maxEnd = originalFiles.Length > imitatorFiles.Length ? originalFiles.Length : imitatorFiles.Length;
-            int counter = 0;
+            ImitatorFolder.SyncWith(OriginalFolder, false, false);
+            ColorChanges(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
 
-            while (counter < maxEnd)
-            {
-                if(counter < originalFiles.Length)
-                {
-                    FileInfo originalFile = originalFiles[counter];
-                    CopyFileToDirectory(originalFile, ImitatorFolder, imitatorFiles);
-                }
-
-                if (counter < originalFiles.Length)
-                {
-                    FileInfo imitatorFile = imitatorFiles[counter];
-                    CopyFileToDirectory(imitatorFile, OriginalFolder, originalFiles);
-                }             
-
-                ++counter;
-            }
+            OriginalFolder.ApplyChanges();
+            ImitatorFolder.ApplyChanges();
 
             MessageBox.Show("Синхронизация завершена!");
+        }
 
-            InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
-            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
+        private void оригиналПоИмитаторуToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (OriginalFolder == null || ImitatorFolder == null)
+            {
+                MessageBox.Show("Не выбраны папки");
+                return;
+            }
+
+            OriginalFolder.SyncWith(ImitatorFolder, true, true);
+            ColorChanges(OriginalFolder, ref originalListView, ref _imageOriginalList);
+
+            OriginalFolder.ApplyChanges();
+
+            ColorApplied(ref imitatorListView);
+
+            MessageBox.Show("Синхронизация завершена!");
+        }
+
+        private void syncImitatorWithOriginalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (OriginalFolder == null || ImitatorFolder == null)
+            {
+                MessageBox.Show("Не выбраны папки");
+                return;
+            }
+
+            ImitatorFolder.SyncWith(OriginalFolder, true, true);
+            ColorChanges(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
+
+            ImitatorFolder.ApplyChanges();
+
+            ColorApplied(ref originalListView);
+
+            MessageBox.Show("Синхронизация завершена!");
         }
     }
 }

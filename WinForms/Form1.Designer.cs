@@ -39,6 +39,8 @@ namespace WinForms
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.syncTwoFouldersToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.syncOriginalWithImitatorToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.syncImitatorWithOriginalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -50,7 +52,7 @@ namespace WinForms
             // 
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Bottom;
             this.splitContainer1.Location = new System.Drawing.Point(0, 21);
-            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.splitContainer1.Margin = new System.Windows.Forms.Padding(2);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -75,7 +77,7 @@ namespace WinForms
             this.originalListView.AutoArrange = false;
             this.originalListView.HideSelection = false;
             this.originalListView.Location = new System.Drawing.Point(10, 53);
-            this.originalListView.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.originalListView.Margin = new System.Windows.Forms.Padding(2);
             this.originalListView.Name = "originalListView";
             this.originalListView.Size = new System.Drawing.Size(278, 287);
             this.originalListView.TabIndex = 2;
@@ -84,7 +86,7 @@ namespace WinForms
             // originalTextBox
             // 
             this.originalTextBox.Location = new System.Drawing.Point(112, 11);
-            this.originalTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.originalTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.originalTextBox.Name = "originalTextBox";
             this.originalTextBox.ReadOnly = true;
             this.originalTextBox.Size = new System.Drawing.Size(176, 20);
@@ -93,7 +95,7 @@ namespace WinForms
             // chooseOriginalFolderButton
             // 
             this.chooseOriginalFolderButton.Location = new System.Drawing.Point(10, 11);
-            this.chooseOriginalFolderButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.chooseOriginalFolderButton.Margin = new System.Windows.Forms.Padding(2);
             this.chooseOriginalFolderButton.Name = "chooseOriginalFolderButton";
             this.chooseOriginalFolderButton.Size = new System.Drawing.Size(98, 37);
             this.chooseOriginalFolderButton.TabIndex = 0;
@@ -107,7 +109,7 @@ namespace WinForms
             this.imitatorListView.AutoArrange = false;
             this.imitatorListView.HideSelection = false;
             this.imitatorListView.Location = new System.Drawing.Point(8, 52);
-            this.imitatorListView.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.imitatorListView.Margin = new System.Windows.Forms.Padding(2);
             this.imitatorListView.Name = "imitatorListView";
             this.imitatorListView.Size = new System.Drawing.Size(278, 288);
             this.imitatorListView.TabIndex = 3;
@@ -116,7 +118,7 @@ namespace WinForms
             // imitatorTextBox
             // 
             this.imitatorTextBox.Location = new System.Drawing.Point(110, 11);
-            this.imitatorTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.imitatorTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.imitatorTextBox.Name = "imitatorTextBox";
             this.imitatorTextBox.ReadOnly = true;
             this.imitatorTextBox.Size = new System.Drawing.Size(176, 20);
@@ -125,7 +127,7 @@ namespace WinForms
             // chooseImitatorFolderButton
             // 
             this.chooseImitatorFolderButton.Location = new System.Drawing.Point(8, 10);
-            this.chooseImitatorFolderButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.chooseImitatorFolderButton.Margin = new System.Windows.Forms.Padding(2);
             this.chooseImitatorFolderButton.Name = "chooseImitatorFolderButton";
             this.chooseImitatorFolderButton.Size = new System.Drawing.Size(98, 37);
             this.chooseImitatorFolderButton.TabIndex = 1;
@@ -146,7 +148,9 @@ namespace WinForms
             // menuFileToolStripMenuItem
             // 
             this.menuFileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.syncTwoFouldersToolStripMenuItem});
+            this.syncTwoFouldersToolStripMenuItem,
+            this.syncOriginalWithImitatorToolStripMenuItem,
+            this.syncImitatorWithOriginalToolStripMenuItem});
             this.menuFileToolStripMenuItem.Name = "menuFileToolStripMenuItem";
             this.menuFileToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.menuFileToolStripMenuItem.Text = "Файл";
@@ -158,6 +162,20 @@ namespace WinForms
             this.syncTwoFouldersToolStripMenuItem.Text = "Синхронизировать две папки";
             this.syncTwoFouldersToolStripMenuItem.Click += new System.EventHandler(this.syncTwoFouldersToolStripMenuItem_Click);
             // 
+            // syncOriginalWithImitatorToolStripMenuItem
+            // 
+            this.syncOriginalWithImitatorToolStripMenuItem.Name = "syncOriginalWithImitatorToolStripMenuItem";
+            this.syncOriginalWithImitatorToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
+            this.syncOriginalWithImitatorToolStripMenuItem.Text = "Оригинал по Подражателю";
+            this.syncOriginalWithImitatorToolStripMenuItem.Click += new System.EventHandler(this.оригиналПоИмитаторуToolStripMenuItem_Click);
+            // 
+            // syncImitatorWithOriginalToolStripMenuItem
+            // 
+            this.syncImitatorWithOriginalToolStripMenuItem.Name = "syncImitatorWithOriginalToolStripMenuItem";
+            this.syncImitatorWithOriginalToolStripMenuItem.Size = new System.Drawing.Size(236, 22);
+            this.syncImitatorWithOriginalToolStripMenuItem.Text = "Подражатель по Оригиналу";
+            this.syncImitatorWithOriginalToolStripMenuItem.Click += new System.EventHandler(this.syncImitatorWithOriginalToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -165,7 +183,7 @@ namespace WinForms
             this.ClientSize = new System.Drawing.Size(588, 363);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.menuStrip1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "Form1";
             this.Text = "Синхронизация файлов";
             this.splitContainer1.Panel1.ResumeLayout(false);
@@ -193,6 +211,8 @@ namespace WinForms
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem menuFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem syncTwoFouldersToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem syncOriginalWithImitatorToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem syncImitatorWithOriginalToolStripMenuItem;
     }
 }
 

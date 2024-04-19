@@ -77,7 +77,7 @@ namespace WinForms
             OriginalFolder = new SyncDirectory(path);
             originalTextBox.Text = OriginalFolder.Directory.FullName;
 
-            InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
+            InitOriginalListView();
         }
 
         private void chooseImitatorFolderButton_Click(object sender, EventArgs e)
@@ -91,7 +91,7 @@ namespace WinForms
             ImitatorFolder = new SyncDirectory(path);
             imitatorTextBox.Text = ImitatorFolder.Directory.FullName;
 
-            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
+            InitImitatorListView();
         }
 
         void ColorApplied(ref ListView listView)
@@ -113,11 +113,13 @@ namespace WinForms
                 if (directory.ChangedFiles.Contains(originalItem.Text) && indexOfExisingFile > -1)
                 {
                     originalItem.ForeColor = Color.Orange;
+                    originalItem.Text += " - Отредактирован";
                     newFilesClone.Remove(newFilesClone[indexOfExisingFile]);
                 }
                 else if (indexOfExisingFile == -1)
                 {
                     originalItem.ForeColor = Color.Red;
+                    originalItem.Text += "- Удален";
                 }
                 else
                 {
@@ -128,7 +130,9 @@ namespace WinForms
             foreach(FileInfo fileInfo in newFilesClone)
             {
                 AddItem(fileInfo, ref listView, ref imageList);
-                listView.Items[listView.Items.Count - 1].ForeColor = Color.Green;
+                ListViewItem addedItem = listView.Items[listView.Items.Count - 1];
+                addedItem.ForeColor = Color.Green;
+                addedItem.Text += " - Создан";
             }
         }
         
@@ -139,6 +143,8 @@ namespace WinForms
                 MessageBox.Show("Не выбраны папки");
                 return;
             }
+
+            Refresh();
 
             OriginalFolder.SyncWith(ImitatorFolder, false, false);
             ColorChanges(OriginalFolder, ref originalListView, ref _imageOriginalList);
@@ -152,6 +158,14 @@ namespace WinForms
             MessageBox.Show("Синхронизация завершена!");
         }
 
+        void RefreshDirectories()
+        {
+            OriginalFolder.ApplyChanges();
+            ImitatorFolder.ApplyChanges();
+            InitOriginalListView();
+            InitImitatorListView();
+        }
+
         private void оригиналПоИмитаторуToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (OriginalFolder == null || ImitatorFolder == null)
@@ -160,12 +174,13 @@ namespace WinForms
                 return;
             }
 
+            RefreshDirectories();
+
             OriginalFolder.SyncWith(ImitatorFolder, true, true);
             ColorChanges(OriginalFolder, ref originalListView, ref _imageOriginalList);
 
             OriginalFolder.ApplyChanges();
-
-            ColorApplied(ref imitatorListView);
+            InitImitatorListView();
 
             MessageBox.Show("Синхронизация завершена!");
         }
@@ -178,14 +193,24 @@ namespace WinForms
                 return;
             }
 
+            Refresh();
+
             ImitatorFolder.SyncWith(OriginalFolder, true, true);
             ColorChanges(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
 
             ImitatorFolder.ApplyChanges();
-
-            ColorApplied(ref originalListView);
+            InitOriginalListView();
 
             MessageBox.Show("Синхронизация завершена!");
+        }
+
+        void InitImitatorListView()
+        {
+            InitListViews(ImitatorFolder, ref imitatorListView, ref _imageImitatorList);
+        }
+        void InitOriginalListView()
+        {
+            InitListViews(OriginalFolder, ref originalListView, ref _imageOriginalList);
         }
     }
 }

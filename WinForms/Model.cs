@@ -61,29 +61,43 @@ namespace WinForms
         {
             foreach (FileInfo sourceFile in sourceDirectory.OldFiles)
             {
-                int counterOfDuplicate = OldFiles.Count(d => d.Name == sourceFile.Name && d.Length != sourceFile.Length);
-                int counterOfSame = OldFiles.Count(d => d.Name == sourceFile.Name && d.Length == sourceFile.Length);
+                FileInfo sameFile = OldFiles.FirstOrDefault(d => d.Name == sourceFile.Name);
 
-                if (counterOfSame >= 1)
-                {
-                    continue;
+                if (!overwriteDuplicates)
+                {                    
+                    if (sameFile != null)
+                    {
+                        if (sameFile.Length == sourceFile.Length)
+                        {
+                            continue;
+                        }
+                        var partsOfName = sourceFile.Name.Split('.');
+                        string newFileName = $"{partsOfName[0]} (1).{partsOfName[1]}";
+                        string newDuplicateFilePath = Path.Combine(Directory.FullName, newFileName);
+
+                        if (sameFile.Length < sourceFile.Length)
+                        {
+                            sameFile.MoveTo(newDuplicateFilePath);
+                            newDuplicateFilePath = Path.Combine(Directory.FullName, sourceFile.Name);
+                        }
+                        else if (sameFile.Length > sourceFile.Length)
+                        {
+                            string otherDuplicateFilePath = Path.Combine(sourceDirectory.Directory.FullName, newFileName);
+                            sourceFile.MoveTo(otherDuplicateFilePath);
+                        }
+                        sourceFile.CopyTo(newDuplicateFilePath);
+                        continue;
+                    }
                 }
 
-                if (!overwriteDuplicates && counterOfDuplicate >= 1)
+                string newFilePath = Path.Combine(Directory.FullName, sourceFile.Name);
+                sourceFile.CopyTo(newFilePath, true);
+                if (sameFile != null)
                 {
-                    var partsOfName = sourceFile.Name.Split('.');
-                    string newFileName = $"{partsOfName[0]} ({counterOfDuplicate}).{partsOfName[1]}";
-                    string newFilePath = Path.Combine(Directory.FullName, newFileName);
-                    sourceFile.CopyTo(newFilePath);
-                }
-                else
-                {
-                    string newFilePath = Path.Combine(Directory.FullName, sourceFile.Name);
-                    sourceFile.CopyTo(newFilePath, true);
-                    if(counterOfDuplicate >= 1)
+                    if (sameFile.Length != sourceFile.Length)
                     {
                         ChangedFiles.Add(sourceFile.Name);
-                    }                    
+                    }
                 }
             }
         }
